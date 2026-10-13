@@ -1,0 +1,1457 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Tienda Python</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: lección y "debajo del capó" a la izquierda, teléfono con la tienda a la derecha. En móvil se apilan: lección, teléfono, capó. */
+:root{
+  --font-display:'Bricolage Grotesque','DM Sans',system-ui,sans-serif;
+  --font-body:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --bg:#EAF0EC; --surface:#FFFFFF; --ink:#12231C; --muted:#52645A; --line:#CCD8D1;
+  --accent:#1E7B5A; --accent-ink:#FFFFFF; --accent-deep:#14573F; --awning-b:#FFFFFF;
+  --tag:#F4C542; --tag-ink:#2B2100; --string:#8A7A4A;
+  --bad:#B3321C; --bad-bg:#FBE6E0;
+  --screen:#F6F9F7; --window:#DDEBE4; --back:#EEF3F0; --note-bg:#DCE7E1; --note-ink:#2A3D34;
+  --code-bg:#FFFFFF; --term-bg:#12201A; --term-fg:#DDF3E8; --term-dim:#8FB1A1; --bezel:#1B2A24;
+  --focus:#1B4DDB; --active-bg:#FFF1BF; --sel:#BFE3D2;
+  --c-comment:#566B60; --c-string:#8A5200; --c-kw:#14573F;
+  --glass:rgba(255,255,255,.35); --paper:rgba(18,35,28,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0B1410; --surface:#13201A; --ink:#E4F1EA; --muted:#9BB2A6; --line:#2A3C33;
+    --accent:#3FBF8E; --accent-ink:#052116; --accent-deep:#2A8F69; --awning-b:#D9EFE4;
+    --tag:#F4C542; --tag-ink:#2B2100; --string:#6E8A7C;
+    --bad:#FF9A85; --bad-bg:#3B201A;
+    --screen:#0F1A15; --window:#16291F; --back:#101C16; --note-bg:#22372D; --note-ink:#CFE5DA;
+    --code-bg:#0C1511; --term-bg:#050B08; --term-fg:#CFEFDF; --term-dim:#7E9C8D; --bezel:#2C4036;
+    --focus:#8FB4FF; --active-bg:#3A3416; --sel:#1F4A38;
+    --c-comment:#8AA698; --c-string:#F4C542; --c-kw:#5FD6A6;
+    --glass:rgba(255,255,255,.08); --paper:rgba(228,241,234,.06);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0B1410; --surface:#13201A; --ink:#E4F1EA; --muted:#9BB2A6; --line:#2A3C33;
+  --accent:#3FBF8E; --accent-ink:#052116; --accent-deep:#2A8F69; --awning-b:#D9EFE4;
+  --tag:#F4C542; --tag-ink:#2B2100; --string:#6E8A7C;
+  --bad:#FF9A85; --bad-bg:#3B201A;
+  --screen:#0F1A15; --window:#16291F; --back:#101C16; --note-bg:#22372D; --note-ink:#CFE5DA;
+  --code-bg:#0C1511; --term-bg:#050B08; --term-fg:#CFEFDF; --term-dim:#7E9C8D; --bezel:#2C4036;
+  --focus:#8FB4FF; --active-bg:#3A3416; --sel:#1F4A38;
+  --c-comment:#8AA698; --c-string:#F4C542; --c-kw:#5FD6A6;
+  --glass:rgba(255,255,255,.08); --paper:rgba(228,241,234,.06);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.55 var(--font-body);padding-inline:16px;padding-block:20px 72px;overflow-wrap:break-word}
+body.big{font-size:20px}
+h1,h2,h3,p,ol,ul,dl,dd{margin:0}
+button{font:inherit;color:inherit}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus-visible{outline:.15em solid var(--focus);outline-offset:.15em}
+::selection{background:var(--sel)}
+
+.app{max-width:74em;margin:0 auto;display:grid;gap:1.25em 2em;align-items:start;
+  grid-template-columns:minmax(0,1fr) minmax(0,25.5em);
+  grid-template-areas:"top top" "lesson phone" "hood phone"}
+.top{grid-area:top;display:grid;gap:.9em 1em;grid-template-columns:minmax(0,1fr) auto;align-items:center}
+.lesson{grid-area:lesson;min-width:0}
+.phone{grid-area:phone;min-width:0}
+.hood{grid-area:hood;min-width:0}
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "lesson" "phone" "hood"}
+}
+@media (max-width:520px){ .top{grid-template-columns:minmax(0,1fr)} .top .btn{justify-self:start} }
+
+/* Marca */
+.brand{display:flex;gap:.8em;align-items:center;min-width:0}
+.mark{flex:none;width:2.6em;height:2.1em;border-radius:.25em .25em .6em .6em;
+  background:repeating-linear-gradient(90deg,var(--accent) 0 .45em,var(--awning-b) .45em .9em);
+  border-bottom:.22em solid var(--accent-deep);box-shadow:0 0 0 1px var(--line)}
+.wordmark{font:800 1.9em/1 var(--font-display);letter-spacing:-.02em;text-wrap:balance}
+.tagline{color:var(--muted);font-size:.95em;margin-top:.25em}
+
+/* Botones */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;min-height:2.6em;padding:.55em 1em;
+  border:1px solid var(--line);border-radius:.5em;background:var(--surface);cursor:pointer;font-weight:600;font-size:.95em;line-height:1.2;text-align:center}
+.btn:hover{border-color:var(--muted)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover:not(:disabled){background:var(--accent-deep);border-color:var(--accent-deep);color:#fff}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.small{min-height:2.2em;padding:.3em .75em;font-size:.88em}
+
+/* Progreso y pasos */
+.progress{grid-column:1/-1;display:flex;gap:.8em;align-items:center}
+.prog-t{font:700 .78em/1.2 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.bar{flex:1;height:.55em;background:var(--line);border-radius:99px;overflow:hidden;min-width:3em}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .5s ease}
+.stepper{grid-column:1/-1;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:.35em}
+.step{position:relative;display:flex;flex-direction:column;align-items:center;gap:.1em;padding:.5em .2em;min-width:0;
+  background:var(--surface);border:1px solid var(--line);border-radius:.5em;cursor:pointer;text-align:center}
+.step .num{font:700 1em/1.2 var(--font-mono)}
+.step .lbl{font-size:.7em;color:var(--muted);line-height:1.2;overflow-wrap:anywhere;hyphens:auto}
+.step .tick{display:none;position:absolute;top:-.45em;right:-.25em;width:1.35em;height:1.35em;border-radius:50%;background:var(--accent);color:var(--accent-ink);font:700 .7em/1.35em var(--font-mono);text-align:center}
+.step.done{border-color:var(--accent)}
+.step.done .tick{display:block}
+.step[aria-current="step"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.step[aria-current="step"] .lbl{color:var(--accent-ink)}
+.step[aria-current="step"] .tick{background:var(--accent-ink);color:var(--accent)}
+@media (max-width:760px){ .step .lbl{display:none} }
+
+/* Tarjetas */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:.6em;padding:1.15em 1.3em}
+.eyebrow{font:700 .72em/1.2 var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.lesson h2{font:800 1.75em/1.1 var(--font-display);letter-spacing:-.015em;margin:.25em 0 .6em;text-wrap:balance}
+.lesson-body{display:grid;gap:.8em;max-width:44em}
+.shop-says{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.2em .8em;align-items:start}
+.shop-says .pill{margin-top:.2em}
+.pill{display:inline-block;background:var(--tag);color:var(--tag-ink);font:700 .7em/1 var(--font-body);letter-spacing:.08em;text-transform:uppercase;padding:.45em .6em;border-radius:.3em;white-space:nowrap}
+.try{background:var(--back);border:1px dashed var(--line);border-radius:.5em;padding:.7em .9em}
+.try b{display:block;font-size:.72em;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.2em}
+.mission{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.7em;align-items:center;padding:.6em .85em;border:1px solid var(--line);border-radius:.5em}
+.mission[data-done="true"]{border-color:var(--accent);background:var(--back)}
+.mission b{font:700 .72em/1.2 var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block}
+.box{width:1.5em;height:1.5em;border:2px solid var(--muted);border-radius:.3em;display:grid;place-items:center;font:700 .85em/1 var(--font-mono);color:transparent;flex:none}
+[data-done="true"]>.box,[data-ok="true"]>.box{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.widget{margin-top:1.1em;display:grid;gap:1em}
+.hint{margin-top:1em;border:1px solid var(--line);border-radius:.5em;padding:.5em .85em}
+.hint summary{cursor:pointer;font-weight:600}
+.hint p{margin-top:.5em;color:var(--muted)}
+.lesson-nav{display:flex;gap:.6em;justify-content:space-between;margin-top:1.3em;flex-wrap:wrap}
+code,.mono{font-family:var(--font-mono);font-size:.9em}
+
+/* Reglas */
+.rules{display:grid;gap:.5em;grid-template-columns:repeat(auto-fit,minmax(11em,1fr))}
+.rule{display:grid;gap:.15em;padding:.6em .8em;border:1px solid var(--line);border-radius:.5em;background:var(--surface)}
+.rule .r-t{font-weight:700;font-size:.92em}
+.rule .r-d{font-size:.84em;color:var(--muted)}
+.rule .r-s{font:700 .72em/1.2 var(--font-mono);letter-spacing:.04em;text-transform:uppercase}
+.rule[data-s="ok"]{border-color:var(--accent)}
+.rule[data-s="ok"] .r-s{color:var(--accent)}
+.rule[data-s="fail"]{border-color:var(--bad);background:var(--bad-bg)}
+.rule[data-s="fail"] .r-s{color:var(--bad)}
+.rule[data-s="none"] .r-s{color:var(--muted)}
+
+/* Ejemplos y reto del cartel roto */
+.chips{display:flex;flex-wrap:wrap;gap:.5em}
+.fix{display:grid;gap:.5em;border:1px dashed var(--line);border-radius:.5em;padding:.75em .9em}
+.fix b{font:700 .72em/1.2 var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.fix .fmsg[data-s="ok"]{color:var(--accent);font-weight:700}
+.fix .btn{justify-self:start}
+
+/* Comparar */
+.cmp{display:grid;gap:.8em;grid-template-columns:repeat(auto-fit,minmax(13em,1fr))}
+.cmp-col{border:1px solid var(--line);border-radius:.5em;padding:.7em .8em;min-width:0}
+.cmp-col h3{font:700 .72em/1.2 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:.4em}
+.cmp-col pre{margin:0 0 .5em;font:400 .82em/1.5 var(--font-mono);white-space:pre-wrap;overflow-wrap:anywhere}
+.cmp-col ul{padding-left:1.1em;font-size:.9em}
+.verdict{padding:.6em .9em;border-radius:.5em;font-weight:600;border:1px solid var(--accent);color:var(--accent)}
+.verdict.bad{border-color:var(--bad);color:var(--bad);background:var(--bad-bg)}
+
+/* Interruptores */
+.switches{list-style:none;padding:0;display:grid;gap:.4em}
+.switches li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:.7em;align-items:center;padding:.45em .6em .45em .8em;border:1px solid var(--line);border-radius:.5em;background:var(--surface)}
+.switches li[data-on="false"] .sw-code{text-decoration:line-through;color:var(--muted)}
+.sw-code{font:400 .85em/1.4 var(--font-mono);overflow-wrap:anywhere}
+.sw-state{font:700 .7em/1 var(--font-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);min-width:5.5em;text-align:right}
+.sw{position:relative;width:3em;height:1.7em;border-radius:99px;border:1px solid var(--line);background:var(--back);cursor:pointer;padding:0}
+.sw::after{content:"";position:absolute;top:.2em;left:.2em;width:1.1em;height:1.1em;border-radius:50%;background:var(--muted);transition:transform .2s}
+.sw[aria-checked="true"]{background:var(--accent);border-color:var(--accent)}
+.sw[aria-checked="true"]::after{transform:translateX(1.3em);background:var(--accent-ink)}
+
+/* Bloques */
+.blocks-head{display:flex;gap:.8em;align-items:center;flex-wrap:wrap}
+.order-msg{font-weight:700;color:var(--muted)}
+.order-msg[data-ok="true"]{color:var(--accent)}
+.blocks{list-style:none;padding:0;display:grid;gap:.4em}
+.block{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.7em;align-items:center;padding:.45em .5em .45em .7em;
+  background:var(--surface);border:1px solid var(--line);border-radius:.5em;cursor:grab}
+.block.over{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.block .ord{font:700 .8em/1 var(--font-mono);background:var(--ink);color:var(--bg);width:1.9em;height:1.9em;display:grid;place-items:center;border-radius:.3em}
+.block .src{font:400 .88em/1.4 var(--font-mono);overflow-wrap:anywhere}
+.block .mv{display:flex;gap:.3em}
+.block .mv button{width:2.2em;height:2.2em;border:1px solid var(--line);background:var(--back);border-radius:.4em;cursor:pointer;display:grid;place-items:center}
+.block .mv button:disabled{opacity:.35;cursor:default}
+
+/* Quiz */
+.quiz{margin-top:1.2em;padding-top:1em;border-top:1px solid var(--line);display:grid;gap:.6em}
+.quiz h3{font:700 .72em/1.2 var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.qcode{margin:0;background:var(--back);border:1px solid var(--line);border-radius:.45em;padding:.6em .8em;font:400 .85em/1.55 var(--font-mono);white-space:pre-wrap;overflow-wrap:anywhere}
+.opts{display:grid;gap:.4em}
+.opt{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.7em;align-items:center;text-align:left;padding:.55em .8em;border:1px solid var(--line);border-radius:.5em;background:var(--surface);cursor:pointer}
+.opt .k{font:700 .8em/1 var(--font-mono);width:1.8em;height:1.8em;display:grid;place-items:center;border-radius:.3em;background:var(--back);border:1px solid var(--line)}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--accent);background:var(--back)}
+.opt.right .k{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-bg)}
+.opt.wrong .k{background:var(--bad);color:var(--bad-bg);border-color:var(--bad)}
+.qres{display:grid;gap:.4em}
+.qres .real{background:var(--term-bg);color:var(--term-fg);font:400 .82em/1.5 var(--font-mono);padding:.6em .8em;border-radius:.45em;white-space:pre-wrap;overflow-wrap:anywhere}
+
+/* Constructor de tienda */
+.builder{display:grid;gap:1em}
+.field{display:grid;gap:.35em}
+.field>label,.field>span.lb{font:700 .72em/1.2 var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+input[type="text"]{width:100%;padding:.6em .75em;border:1px solid var(--line);border-radius:.45em;background:var(--code-bg);color:var(--ink);font:inherit;min-height:2.6em}
+.skins{display:flex;gap:.6em;flex-wrap:wrap}
+.swatch{width:2.4em;height:2.4em;border-radius:50%;border:.18em solid var(--surface);outline:1px solid var(--line);cursor:pointer;background:var(--c);padding:0}
+.swatch[aria-pressed="true"]{outline:.17em solid var(--ink)}
+.goals{list-style:none;padding:0;display:grid;gap:.4em}
+.goal{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.7em;align-items:center;padding:.5em .7em;border:1px solid var(--line);border-radius:.5em}
+.goal[data-ok="true"]{border-color:var(--accent);background:var(--back)}
+.goal.bonus{border-style:dashed}
+.goal .extra{font:700 .65em/1 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-left:.4em}
+.meter{display:flex;align-items:center;gap:.8em}
+.meter .t{font:700 .8em/1.2 var(--font-mono);white-space:nowrap}
+.finale{display:grid;gap:.8em}
+.win{padding:.8em 1em;border-radius:.5em;background:var(--tag);color:var(--tag-ink);font-weight:700}
+.cert{border:.18em double var(--ink);border-radius:.4em;padding:1.1em 1.3em;display:grid;gap:.5em;background:repeating-linear-gradient(90deg,transparent 0 .9em,var(--paper) .9em 1.8em)}
+.cert h3{font:800 1.6em/1.1 var(--font-display);letter-spacing:-.01em;text-wrap:balance}
+.cert dl{display:flex;gap:1.4em;flex-wrap:wrap;margin-top:.3em}
+.cert dt{font:700 .68em/1.2 var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.cert dd{font:700 1.2em/1.2 var(--font-mono)}
+.copybox{width:100%;min-height:7em;font:400 .82em/1.5 var(--font-mono);background:var(--code-bg);color:var(--ink);border:1px solid var(--line);border-radius:.45em;padding:.6em .8em}
+details.ex{border:1px solid var(--line);border-radius:.5em;padding:.5em .8em}
+details.ex summary{cursor:pointer;font-weight:600}
+
+/* Teléfono */
+.phone-frame{width:100%;max-width:25.5em;margin-inline:auto;background:var(--bezel);border-radius:2.4em;padding:.7em;box-shadow:0 1.2em 2.4em -1.2em rgba(0,0,0,.45)}
+.notch{width:5.5em;height:1.1em;border-radius:99px;background:var(--bezel);margin:.2em auto .4em;border:1px solid rgba(255,255,255,.12)}
+.screen{--awn-a:#1E7B5A;--awn-deep:#14573F;background:var(--screen);border-radius:1.7em;overflow:hidden;display:flex;flex-direction:column;color:var(--ink);position:relative}
+.screen[data-skin="rojo"]{--awn-a:#C0392B;--awn-deep:#8E2A1F}
+.screen[data-skin="azul"]{--awn-a:#2563B0;--awn-deep:#1B4680}
+.screen[data-skin="naranja"]{--awn-a:#D9731A;--awn-deep:#A5530E}
+.screen[data-skin="morado"]{--awn-a:#7B4BB5;--awn-deep:#58348A}
+.appbar{display:flex;justify-content:space-between;align-items:center;gap:.6em;padding:.65em 1.1em .5em;font-size:.72em;color:var(--muted);font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.stats{display:flex;gap:.9em;flex-wrap:wrap;justify-content:flex-end}
+.stats b{color:var(--ink);font-family:var(--font-mono)}
+.awning{height:2.2em;background:repeating-linear-gradient(90deg,var(--awn-a) 0 1.5em,var(--awning-b) 1.5em 3em)}
+.valance{height:.8em;background:repeating-linear-gradient(90deg,var(--awn-a) 0 1.5em,var(--awning-b) 1.5em 3em);
+  -webkit-mask:radial-gradient(circle at 50% 0,#000 .73em,transparent .76em) 0 0/1.5em .8em repeat-x;mask:radial-gradient(circle at 50% 0,#000 .73em,transparent .76em) 0 0/1.5em .8em repeat-x}
+.bunting{display:none;justify-content:space-between;padding:0 .4em;height:1.35em;margin-top:-.1em}
+.screen.open .bunting{display:flex}
+.bunting i{width:1.3em;height:1.2em;background:var(--c);clip-path:polygon(0 0,100% 0,50% 100%);animation:sway 2.6s ease-in-out infinite alternate;transform-origin:50% 0}
+.bunting i:nth-child(even){animation-delay:-1.3s}
+@keyframes sway{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}
+.shopbar{display:flex;align-items:center;justify-content:space-between;gap:.6em;padding:.55em .9em .55em 1em;border-bottom:1px solid var(--line)}
+.shopname{font:800 1.02em/1.15 var(--font-display);letter-spacing:.1em;text-transform:uppercase;min-width:0;overflow-wrap:anywhere}
+.door{flex:none;font:700 .66em/1 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;padding:.55em .7em;border-radius:.3em;border:1px solid var(--line);color:var(--muted);background:var(--back)}
+.door[data-s="open"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.door[data-s="closed"]{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+.window{position:relative;overflow:hidden;background:var(--window);padding:.4em 1em .8em;min-height:10em}
+.window::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,var(--glass) 0 14%,transparent 14% 22%,var(--glass) 22% 27%,transparent 27%)}
+.signs{display:flex;flex-direction:column;align-items:center;gap:.35em;min-height:7em;max-height:14em;overflow:auto;padding-bottom:.4em;position:relative;z-index:1}
+.signs:empty{justify-content:center}
+.signs:empty::before{content:"La puerta está vacía. Pulsa Ejecutar para colgar el primer cartel.";text-align:center;color:var(--muted);font-size:.9em;max-width:17em;padding-top:1.4em}
+.sign{position:relative;margin-top:1em;background:var(--tag);color:var(--tag-ink);font-weight:700;line-height:1.3;padding:.55em 1em;border-radius:.35em;
+  max-width:100%;min-width:6em;text-align:center;white-space:pre-line;overflow-wrap:anywhere;box-shadow:0 .15em 0 rgba(0,0,0,.2);animation:hang .45s ease-out both;flex:none}
+.sign::before,.sign::after{content:"";position:absolute;top:-.9em;width:2px;height:.9em;background:var(--string)}
+.sign::before{left:20%}.sign::after{right:20%}
+.sign.bad{background:var(--bad-bg);color:var(--bad);border:.12em dashed var(--bad);transform:rotate(-3deg);box-shadow:none;animation:drop .6s ease-out both}
+.sign.bad::after{height:.45em;transform-origin:top;transform:rotate(38deg)}
+.sign.bad small{display:block;font:500 .78em/1.4 var(--font-mono);margin-top:.3em;white-space:normal}
+.sign.bad strong{display:block;font-size:.85em;letter-spacing:.06em;text-transform:uppercase}
+@keyframes hang{from{opacity:0;transform:translateY(-.8em) rotate(2deg)}to{opacity:1;transform:none}}
+@keyframes drop{from{opacity:0;transform:translateY(-.8em) rotate(-14deg)}to{opacity:1;transform:rotate(-3deg)}}
+.street{position:relative;z-index:1;display:flex;align-items:flex-end;gap:.6em;min-height:4.2em;margin-top:.3em}
+.cust{flex:none;width:2.4em;height:3.5em}
+.c-body{fill:var(--awn-a)}.c-leg{fill:var(--awn-deep)}.c-head{fill:var(--tag)}.c-eye{fill:var(--tag-ink)}
+.cust .m{fill:none;stroke:var(--tag-ink);stroke-width:1.6;stroke-linecap:round;display:none}
+.street[data-mood="idle"] .m-idle,.street[data-mood="happy"] .m-happy,.street[data-mood="bad"] .m-bad{display:block}
+.bubble{position:relative;flex:0 1 auto;min-width:0;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:.7em;padding:.4em .75em;font-size:.85em;line-height:1.35;margin-bottom:1.3em;animation:hang .4s ease-out both}
+.bubble::before{content:"";position:absolute;left:-.4em;bottom:.6em;width:.7em;height:.7em;background:var(--surface);border-left:1px solid var(--line);border-bottom:1px solid var(--line);transform:rotate(45deg)}
+.street[data-mood="idle"] .bubble{display:none}
+.conf{position:absolute;top:-1em;width:.5em;height:.8em;z-index:2;animation:fall 2s ease-in forwards}
+@keyframes fall{to{transform:translate(var(--x),16em) rotate(var(--r));opacity:.9}}
+
+.backroom{background:var(--back);border-top:.2em dashed var(--line);padding:.6em 1em .8em}
+.backroom h3{font:700 .66em/1.2 var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.45em}
+.notes{display:flex;flex-wrap:wrap;gap:.4em;min-height:1.8em;max-height:6.5em;overflow:auto}
+.notes:empty::before{content:"Sin notas por ahora";color:var(--muted);font-size:.85em}
+.note{font:500 .78em/1.35 var(--font-mono);background:var(--note-bg);color:var(--note-ink);padding:.3em .6em;border-radius:.25em;transform:rotate(-1deg);overflow-wrap:anywhere;animation:hang .45s ease-out both}
+
+.editor{border-top:1px solid var(--line);background:var(--code-bg)}
+.ed-head{display:flex;justify-content:space-between;align-items:center;gap:.5em;padding:.3em .6em .3em 1em;border-bottom:1px solid var(--line);font:500 .78em/1.2 var(--font-mono);color:var(--muted)}
+.ed-head .btn{min-height:2em;padding:.2em .6em;font-size:.95em}
+.quick{display:flex;gap:.35em;padding:.4em .6em;border-bottom:1px solid var(--line);overflow-x:auto;background:var(--screen)}
+.quick button{flex:none;min-width:2.4em;min-height:2.1em;padding:.15em .55em;border:1px solid var(--line);border-radius:.4em;background:var(--surface);font:500 .8em/1 var(--font-mono);cursor:pointer}
+.quick button:hover{border-color:var(--muted)}
+.ed-wrap{--ed-fs:.85em;display:grid;grid-template-columns:auto minmax(0,1fr);height:12em;font-family:var(--font-mono)}
+.gutter{overflow:hidden;text-align:right;padding:.6em 0 1.5em;color:var(--muted);font-size:var(--ed-fs);line-height:1.6;border-right:1px solid var(--line);min-width:2.6em}
+.gl{display:block;width:100%;height:1.6em;margin:0;padding:0 .55em 0 .7em;border:0;background:transparent;color:inherit;font:inherit;line-height:1.6;text-align:right;cursor:pointer}
+.gl:hover{background:var(--back);color:var(--ink)}
+.ed-main{position:relative;min-width:0}
+.hl,.src-ta{position:absolute;inset:0;margin:0;padding:.6em .8em 1.5em;font:400 var(--ed-fs)/1.6 var(--font-mono);white-space:pre;tab-size:4;border:0;letter-spacing:0}
+.hl{overflow:hidden;pointer-events:none;color:var(--ink)}
+.src-ta{overflow:auto;background:transparent;color:transparent;caret-color:var(--ink);resize:none;outline:none;width:100%;height:100%;-webkit-text-fill-color:transparent}
+.src-ta:focus-visible{outline:none;box-shadow:inset 0 0 0 .15em var(--focus)}
+.l{display:block}
+.l.active{background:var(--active-bg)}
+.l.next{box-shadow:inset 0 0 0 1px var(--muted)}
+.l.err{background:var(--bad-bg);box-shadow:inset .22em 0 var(--bad)}
+.t-com{color:var(--c-comment);font-style:italic}
+.t-str{color:var(--c-string)}
+.t-kw{color:var(--c-kw);font-weight:700}
+@media (pointer:coarse){ .ed-wrap{--ed-fs:16px} }
+
+.runbar{display:flex;gap:.5em;align-items:center;padding:.6em .8em;border-top:1px solid var(--line);background:var(--screen);flex-wrap:wrap}
+.runbar .hint2{flex-basis:100%;font-size:.72em;color:var(--muted)}
+.console{background:var(--term-bg);color:var(--term-fg);padding:.5em 1em .9em;font:400 .82em/1.55 var(--font-mono);min-height:6.5em;max-height:12em;overflow:auto}
+.console h3{font:700 .66em/1.2 var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--term-dim);margin-bottom:.4em}
+.console .cmd{color:var(--term-dim)}
+.console .out{white-space:pre-wrap;overflow-wrap:anywhere}
+.console .err{white-space:pre-wrap;overflow-wrap:anywhere;color:#FFB4A3;margin-top:.3em}
+.settings{border-top:1px solid var(--line);padding:.5em 1em;font-size:.82em;background:var(--screen)}
+.settings summary{cursor:pointer;font-weight:700;color:var(--muted)}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:.6em;padding:.45em 0;flex-wrap:wrap}
+.seg{display:flex;gap:.3em}
+.seg .btn{min-height:2em;padding:.2em .6em;font-size:.95em}
+
+/* Debajo del capó */
+.hood h2{font:800 1.35em/1.1 var(--font-display);letter-spacing:-.01em}
+.hood-note{margin-top:.5em;max-width:44em}
+.trace{list-style:none;padding:0;margin-top:.8em}
+.trace:empty::before{content:"Pulsa Ejecutar. Aquí verás, línea por línea, qué hizo Python con tu código.";color:var(--muted)}
+.trace li{display:grid;grid-template-columns:2em minmax(0,1fr);gap:.25em .7em;padding:.65em 0;border-top:1px solid var(--line);animation:fade .35s ease-out both}
+.trace .n{font:700 .8em/2 var(--font-mono);color:var(--muted);text-align:right}
+.trace .c{font:400 .85em/1.5 var(--font-mono);background:var(--back);padding:.15em .5em;border-radius:.3em;overflow-wrap:anywhere;white-space:pre-wrap;min-width:0}
+.trace .v{grid-column:2;display:flex;gap:.6em;align-items:baseline;flex-wrap:wrap;min-width:0}
+.trace .v span:last-child{flex:1 1 14em;min-width:0}
+.chip{flex:none;font:700 .66em/1 var(--font-body);letter-spacing:.08em;text-transform:uppercase;padding:.3em .5em;border-radius:.3em;border:1px solid currentColor}
+.chip.show{color:var(--accent)}
+.chip.ignore{color:var(--muted);border-style:dashed}
+.chip.error{color:var(--bad);background:var(--bad-bg)}
+.chip.skip{color:var(--muted)}
+.summary{margin-top:.8em;padding:.7em .9em;border-left:.25em solid var(--accent);background:var(--back);border-radius:0 .4em .4em 0}
+.summary.bad{border-left-color:var(--bad)}
+.cheat{margin-top:1em;border:1px solid var(--line);border-radius:.5em;padding:.5em .85em}
+.cheat summary{cursor:pointer;font-weight:600}
+.cheat dl{display:grid;grid-template-columns:minmax(0,max-content) minmax(0,1fr);gap:.4em 1em;margin-top:.6em;align-items:baseline}
+.cheat dt{font:500 .85em/1.4 var(--font-mono);background:var(--back);padding:.1em .45em;border-radius:.3em;overflow-wrap:anywhere}
+.cheat dd{font-size:.92em}
+@media (max-width:520px){ .cheat dl{grid-template-columns:minmax(0,1fr)} }
+@keyframes fade{from{opacity:0;transform:translateY(.3em)}to{opacity:1;transform:none}}
+
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);transform:translate(-50%,2em);background:var(--ink);color:var(--bg);padding:.65em 1.1em;border-radius:.6em;font-weight:600;font-size:.92em;max-width:calc(100% - 32px);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:20;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"></span>
+      <div>
+        <h1 class="wordmark">Tienda Python</h1>
+        <p class="tagline">Aprende print() y los comentarios abriendo tu propia tienda</p>
+      </div>
+    </div>
+    <button class="btn" id="bigBtn" type="button" aria-pressed="false">Modo proyector</button>
+    <div class="progress" aria-live="polite"><span class="prog-t" id="progText">Misiones 0 de 8</span><div class="bar" aria-hidden="true"><i id="progBar"></i></div></div>
+    <nav class="stepper" id="stepper" aria-label="Lecciones"></nav>
+  </header>
+
+  <section class="lesson card" id="lesson"></section>
+
+  <section class="phone" aria-label="Simulador de la tienda">
+    <div class="phone-frame">
+      <div class="notch" aria-hidden="true"></div>
+      <div class="screen" id="screen" data-skin="verde">
+        <div class="appbar">
+          <span>Mi tienda</span>
+          <span class="stats" aria-label="Estadísticas de la tienda">
+            <span><b id="stSigns">0</b> carteles</span>
+            <span><b id="stNotes">0</b> notas</span>
+            <span><b id="stClients">0</b> clientes</span>
+          </span>
+        </div>
+        <div class="awning" aria-hidden="true"></div>
+        <div class="valance" aria-hidden="true"></div>
+        <div class="bunting" id="bunting" aria-hidden="true"></div>
+        <div class="shopbar">
+          <span class="shopname" id="shopName">Tienda Don Pepe</span>
+          <span class="door" id="door" data-s="idle">Cerrado</span>
+        </div>
+        <div class="window" id="windowBox">
+          <div class="signs" id="signs" aria-label="Carteles de la puerta"></div>
+          <div class="street" id="street" data-mood="idle">
+            <svg class="cust" viewBox="0 0 44 64" aria-hidden="true">
+              <rect class="c-leg" x="12" y="54" width="8" height="9" rx="3"/><rect class="c-leg" x="24" y="54" width="8" height="9" rx="3"/>
+              <rect class="c-body" x="8" y="26" width="28" height="30" rx="10"/>
+              <circle class="c-head" cx="22" cy="15" r="11"/>
+              <circle class="c-eye" cx="18" cy="13" r="1.5"/><circle class="c-eye" cx="26" cy="13" r="1.5"/>
+              <path class="m m-idle" d="M18 20 H26"/><path class="m m-happy" d="M17 19 Q22 25 27 19"/><path class="m m-bad" d="M17 22 Q20 18 22 21 T27 20"/>
+            </svg>
+            <div class="bubble" id="bubble" aria-live="polite"></div>
+          </div>
+        </div>
+        <div class="backroom">
+          <h3>Trastienda · solo para el personal</h3>
+          <div class="notes" id="notes" aria-label="Notas internas"></div>
+        </div>
+        <div class="editor">
+          <div class="ed-head"><span>tienda.py</span><button class="btn" id="copyBtn" type="button">Copiar código</button></div>
+          <div class="quick" id="quick" role="toolbar" aria-label="Teclas rápidas">
+            <button type="button" data-q="0">print()</button>
+            <button type="button" data-q="1">" "</button>
+            <button type="button" data-q="2">' '</button>
+            <button type="button" data-q="3">( )</button>
+            <button type="button" data-q="4">#</button>
+            <button type="button" data-q="5">,</button>
+          </div>
+          <div class="ed-wrap" id="edWrap">
+            <div class="gutter" id="gutter" aria-hidden="true"></div>
+            <div class="ed-main">
+              <pre class="hl" id="hl" aria-hidden="true"></pre>
+              <textarea class="src-ta" id="ta" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="Código de Python"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="runbar">
+          <button class="btn primary" id="runBtn" type="button">
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z" fill="currentColor"/></svg>
+            Ejecutar
+          </button>
+          <button class="btn" id="stepBtn" type="button">Paso a paso</button>
+          <button class="btn" id="resetBtn" type="button">Reiniciar lección</button>
+          <span class="hint2">Ctrl + Enter ejecuta. Clic en un número de línea (o Ctrl + /) comenta o descomenta esa línea.</span>
+        </div>
+        <div class="console" id="consoleBox" aria-live="polite">
+          <h3>Consola de Python</h3>
+          <div id="cons"></div>
+        </div>
+        <details class="settings">
+          <summary>Ajustes</summary>
+          <div class="set-row"><span>Velocidad de la ejecución</span>
+            <div class="seg" role="group" aria-label="Velocidad">
+              <button class="btn" type="button" data-speed="lenta" aria-pressed="false">Lenta</button>
+              <button class="btn" type="button" data-speed="normal" aria-pressed="true">Normal</button>
+              <button class="btn" type="button" data-speed="rapida" aria-pressed="false">Rápida</button>
+            </div></div>
+          <div class="set-row"><span>Sonidos de la tienda</span><button class="btn" type="button" id="soundBtn" aria-pressed="false">Desactivados</button></div>
+          <div class="set-row"><span>Misiones y tienda guardadas</span><button class="btn" type="button" id="wipeBtn">Borrar progreso</button></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="hood card" aria-labelledby="hoodTitle">
+    <h2 id="hoodTitle">Debajo del capó</h2>
+    <p class="hood-note" id="hoodNote"></p>
+    <ol class="trace" id="trace"></ol>
+    <p class="summary" id="summary" hidden></p>
+    <details class="cheat">
+      <summary>Chuleta de la tienda</summary>
+      <dl>
+        <dt>print("texto")</dt><dd>Cuelga un cartel con ese texto.</dd>
+        <dt>print(2)</dt><dd>Un número va sin comillas.</dd>
+        <dt>print("Pan:", 2)</dt><dd>Junta varias piezas con un espacio.</dd>
+        <dt>print()</dt><dd>Deja una línea en blanco.</dd>
+        <dt># nota</dt><dd>Nota de la trastienda. Python la ignora.</dd>
+        <dt># print("x")</dt><dd>Apaga un cartel sin borrarlo.</dd>
+      </dl>
+    </details>
+  </section>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/*PURE_START*/
+const FRIENDLY={
+  quote:'Colgaste el cartel a medias. Abriste la comilla pero nunca la cerraste, así que Python no sabe dónde termina el texto.',
+  'paren-open':'Falta el paréntesis. print necesita paréntesis, como el marco que sostiene el cartel: print( ... ).',
+  'paren-close':'Abriste el paréntesis pero no lo cerraste. Falta el ) al final de la línea.',
+  case:'Python distingue mayúsculas de minúsculas. La palabra se escribe print, toda en minúsculas.',
+  noquotes:'Sin comillas, Python cree que esa palabra es el nombre de algo que debería conocer. Los textos van entre comillas.',
+  extra:'Hay algo de más después del paréntesis de cierre, o un símbolo que Python no entiende ahí.',
+  unknown:'Python no conoce esa palabra. En esta tienda solo usamos print() y comentarios con #.',
+  generic:'Python no entiende esta línea. En esta tienda solo usamos print() y comentarios con #.',
+  curly:'Esas comillas curvas vienen de un procesador de texto o del teclado del móvil. Python solo entiende las comillas rectas " y \'.',
+  indent:'Las líneas deben empezar pegadas al borde izquierdo. Python usa los espacios del inicio para otra cosa. Borra los espacios de más.'
+};
+
+function tokenize(line){
+  const out=[];let i=0,buf='';
+  const flush=()=>{if(buf){out.push({t:'txt',s:buf});buf='';}};
+  while(i<line.length){
+    const c=line[i];
+    if(c==='#'){flush();out.push({t:'com',s:line.slice(i)});i=line.length;break;}
+    if(c==='"'||c==="'"){
+      flush();let j=i+1;
+      while(j<line.length&&line[j]!==c){if(line[j]==='\\')j++;j++;}
+      const end=Math.min(j+1,line.length);
+      out.push({t:'str',s:line.slice(i,end)});i=end;continue;
+    }
+    if(/[A-Za-z_]/.test(c)){
+      let j=i;while(j<line.length&&/\w/.test(line[j]))j++;
+      const w=line.slice(i,j);flush();
+      out.push({t:w==='print'?'kw':'txt',s:w});i=j;continue;
+    }
+    buf+=c;i++;
+  }
+  flush();return out;
+}
+
+function stripComments(src){
+  return src.replace(/\r/g,'').split('\n').map(ln=>{
+    const toks=tokenize(ln);
+    const had=toks.some(t=>t.t==='com');
+    const kept=toks.filter(t=>t.t!=='com').map(t=>t.s).join('').trimEnd();
+    return(had&&!kept.trim())?null:kept;
+  }).filter(x=>x!==null).join('\n');
+}
+
+function toggleLineText(line){
+  const m=/^(\s*)(.*)$/.exec(line);
+  return /^#/.test(m[2])?m[1]+m[2].replace(/^#\s?/,''):m[1]+'# '+m[2];
+}
+
+function numStr(tok){
+  const v=Number(tok);
+  if(!Number.isFinite(v))return tok;
+  let s=String(v);
+  if(tok.indexOf('.')>=0&&s.indexOf('.')<0&&s.indexOf('e')<0)s+='.0';
+  return s;
+}
+
+function parseLine(raw,n){
+  const t=raw.trim();
+  if(!t)return{kind:'blank',n,raw};
+  if(t[0]==='#')return{kind:'comment',n,raw,text:t};
+  const E=(type,msg,hint,phase)=>({kind:'error',n,raw,type,msg,hint,phase,friendly:FRIENDLY[hint]});
+  if(/^\s/.test(raw))return E('IndentationError','unexpected indent','indent','syntax');
+  const cm=tokenize(t).filter(k=>k.t==='txt'||k.t==='kw').map(k=>k.s).join('').match(/[\u201C\u201D\u2018\u2019]/);
+  if(cm){
+    const cp=cm[0].codePointAt(0).toString(16).toUpperCase().padStart(4,'0');
+    return E('SyntaxError',`invalid character '${cm[0]}' (U+${cp})`,'curly','syntax');
+  }
+  const m=/^[A-Za-z_]\w*/.exec(t);
+  if(!m)return E('SyntaxError','invalid syntax','generic','syntax');
+  const word=m[0];
+  if(word!=='print'){
+    if(word.toLowerCase()==='print')return E('NameError',`name '${word}' is not defined`,'case','runtime');
+    if(t===word)return E('NameError',`name '${word}' is not defined`,'unknown','runtime');
+    return E('SyntaxError','invalid syntax','generic','syntax');
+  }
+  const rest=t.slice(5).trimStart();
+  if(rest==='')return{kind:'noop',n,raw};
+  if(rest[0]!=='(')return E('SyntaxError',"Missing parentheses in call to 'print'. Did you mean print(...)?",'paren-open','syntax');
+  const s=rest.slice(1);
+  let i=0;const args=[];let nameErr=null,numChanged=false;
+  const ws=()=>{while(i<s.length&&/\s/.test(s[i]))i++;};
+  ws();
+  if(s[i]!==')'){
+    for(;;){
+      ws();
+      const q=s[i];
+      if(q==='"'||q==="'"){
+        let j=i+1,out='';
+        while(j<s.length&&s[j]!==q){
+          if(s[j]==='\\'&&j+1<s.length){const c=s[j+1];out+=c==='n'?'\n':c==='t'?'\t':c;j+=2;}
+          else{out+=s[j];j++;}
+        }
+        if(j>=s.length)return E('SyntaxError',`unterminated string literal (detected at line ${n})`,'quote','syntax');
+        args.push({type:'str',v:out});i=j+1;
+      }else{
+        let j=i;while(j<s.length&&!/[,)#]/.test(s[j]))j++;
+        const bare=s.slice(i,j).trim();
+        if(bare===''&&(j>=s.length||s[j]==='#'))return E('SyntaxError',"'(' was never closed",'paren-close','syntax');
+        if(/^-?\d+(\.\d+)?$/.test(bare)){const ns=numStr(bare);if(ns!==bare)numChanged=true;args.push({type:'num',v:ns});}
+        else if(/^[A-Za-z_]\w*$/.test(bare)){if(!nameErr)nameErr=bare;args.push({type:'name',v:bare});}
+        else return E('SyntaxError','invalid syntax','generic','syntax');
+        i=j;
+      }
+      ws();
+      if(s[i]===','){i++;ws();if(s[i]===')')break;continue;}
+      break;
+    }
+  }
+  const after=s.slice(i);
+  if(after[0]!==')'){
+    if(after===''||after[0]==='#')return E('SyntaxError',"'(' was never closed",'paren-close','syntax');
+    return E('SyntaxError','invalid syntax','extra','syntax');
+  }
+  const tail=after.slice(1).trim();
+  if(tail&&tail[0]!=='#')return E('SyntaxError','invalid syntax','extra','syntax');
+  if(nameErr)return E('NameError',`name '${nameErr}' is not defined`,'noquotes','runtime');
+  return{kind:'print',n,raw,text:args.map(a=>a.v).join(' '),args,trailing:tail||null,numChanged};
+}
+
+function analyze(src){
+  const items=src.replace(/\r/g,'').split('\n').map((raw,i)=>parseLine(raw,i+1));
+  const syn=items.find(x=>x.kind==='error'&&x.phase==='syntax');
+  const outputs=[],notes=[],steps=[];
+  let error=null;
+  if(syn){
+    error=syn;
+    items.forEach(x=>{
+      if(x.kind==='blank')return;
+      steps.push(x===syn?x:{kind:'skipped',n:x.n,raw:x.raw,why:'syntax'});
+    });
+  }else{
+    let stopped=false;
+    for(const x of items){
+      if(x.kind==='blank')continue;
+      if(stopped){steps.push({kind:'skipped',n:x.n,raw:x.raw,why:'runtime'});continue;}
+      steps.push(x);
+      if(x.kind==='error'){error=x;stopped=true;continue;}
+      if(x.kind==='print'){outputs.push({text:x.text,n:x.n});if(x.trailing)notes.push({text:x.trailing,n:x.n});}
+      if(x.kind==='comment')notes.push({text:x.text,n:x.n});
+    }
+  }
+  return{items,steps,outputs,notes,error};
+}
+
+function describeResult(code){
+  const r=analyze(code);
+  return{
+    outs:r.outputs.map(o=>o.text),
+    err:r.error?`Error en la línea ${r.error.n}: ${r.error.type}: ${r.error.msg}`:null,
+    syntax:!!(r.error&&r.error.phase==='syntax')
+  };
+}
+
+function isOrdered(outputs){
+  if(outputs.length<2)return false;
+  let prev=0;
+  for(const o of outputs){
+    const m=/^\s*(\d+)\./.exec(o.text);
+    if(!m||Number(m[1])<=prev)return false;
+    prev=Number(m[1]);
+  }
+  return true;
+}
+/*PURE_END*/
+
+/* ---------- Datos ---------- */
+const STORE_TYPES=[
+  {k:'Tienda de barrio',name:'Tienda Don Pepe',skin:'verde',items:[['Leche',1],['Arroz',2],['Huevos x12',3]]},
+  {k:'Panadería',name:'Panadería La Espiga',skin:'naranja',items:[['Pan de yuca',1],['Croissant',2],['Torta de chocolate',3.5]]},
+  {k:'Cafetería',name:'Café Don Lucho',skin:'rojo',items:[['Café',1.5],['Capuchino',2.5],['Tostada',2]]},
+  {k:'Librería',name:'Librería El Faro',skin:'azul',items:[['Cuaderno',3],['Novela',12],['Lápices x12',4]]},
+  {k:'Juguetería',name:'Juguetería Arcoíris',skin:'morado',items:[['Pelota',4],['Rompecabezas',8],['Peluche',10]]}
+];
+const SKINS=[['verde','#1E7B5A'],['rojo','#C0392B'],['azul','#2563B0'],['naranja','#D9731A'],['morado','#7B4BB5']];
+const BUNTING=['#F4C542','#E8566F','#4FB3E8','#FFFFFF','#7BD389','#F4C542','#E8566F','#4FB3E8','#FFFFFF','#7BD389','#F4C542','#E8566F','#4FB3E8','#FFFFFF'];
+const SPEEDS={lenta:850,normal:420,rapida:130};
+const EX_TYPES=[
+  {k:'Texto',c:'print("Pan de yuca")'},
+  {k:'Número',c:'print(2)'},
+  {k:'Texto y número',c:'print("Precio:", 2, "USD")'},
+  {k:'Decimal',c:'print(2.50)'},
+  {k:'Línea en blanco',c:'print("Arriba")\nprint()\nprint("Abajo")'}
+];
+const EX_ERRORS=[
+  {k:'Falta una comilla',c:'print("Hola)'},
+  {k:'Falta un paréntesis',c:'print("Hola"'},
+  {k:'Print con mayúscula',c:'Print("Hola")'},
+  {k:'Sin comillas',c:'print(Hola)'},
+  {k:'Sin paréntesis',c:'print "Hola"'},
+  {k:'Comillas curvas',c:'print(\u201CHola\u201D)'},
+  {k:'Espacio al inicio',c:'  print("Hola")'},
+  {k:'Código correcto',c:'print("Hola")'}
+];
+const FIXES=[
+  {c:'print("Abierto hasta las 6)',exp:['Abierto hasta las 6']},
+  {c:'print("Pan fresco"\nprint("Café caliente")',exp:['Pan fresco','Café caliente']},
+  {c:'Print("Rebajas hoy")',exp:['Rebajas hoy']},
+  {c:'print(Bienvenidos)',exp:['Bienvenidos']},
+  {c:'print(\u201CAbierto\u201D)\nprint(\u201CCerrado\u201D)',exp:['Abierto','Cerrado']},
+  {c:'print("Hoy: 2 por 1")  # oferta\nprint(\'Cierra a las 8")',exp:['Hoy: 2 por 1','Cierra a las 8']}
+];
+
+const LESSONS=[
+  {
+    short:'El cartel',title:'El cartel de la puerta',
+    analogy:'Cuando abres una tienda, lo primero es colgar un cartel para que los clientes lo lean. En Python, esa tarea la hace print().',
+    body:'print() significa «muestra esto en pantalla». Lo que escribas entre las comillas es lo que aparece en el cartel.',
+    tryIt:'Cambia el texto entre las comillas por el nombre de tu tienda y pulsa Ejecutar.',
+    hood:'print es una instrucción que Python ya trae incluida. Los paréntesis le entregan lo que debe mostrar, y el texto entre comillas es el mensaje.',
+    hint:'Cambia solo lo que está entre las comillas. Deja los paréntesis y las comillas donde están.',
+    code:'print("¡Bienvenido a la tienda!")',widgets:[],
+    mission:{text:'Cambia el texto del cartel y ejecútalo.',test:c=>!c.res.error&&c.res.outputs.length>=1&&c.code.trim()!==LESSONS[0].code.trim()},
+    quiz:{code:'print("Hola")',q:'¿Qué cartel aparece en la puerta?',opts:['Hola','print("Hola")','"Hola"'],ans:0,why:'Las comillas solo marcan dónde empieza y termina el texto. No se muestran en el cartel.'}
+  },
+  {
+    short:'3 reglas',title:'Las tres reglas del cartel',
+    analogy:'Un cartel real necesita marco, clavos y letras. Un print() también necesita tres cosas para quedar bien colgado.',
+    body:'Mira los tres indicadores mientras escribes. Se encienden o se apagan en vivo según lo que hay en el editor.',
+    tryIt:'Escribe Print con mayúscula, o borra un paréntesis, y mira qué regla se apaga. Luego arréglalo.',
+    hood:'Las comillas le dicen a Python dónde empieza y dónde termina el texto. Sirven las dobles o las simples, siempre que abras y cierres con la misma.',
+    hint:'Un print con comillas dobles se ve así: print("Hola"). Con comillas simples: print(\'Hola\'). Escribe uno de cada tipo.',
+    code:'print("Hoy: pan fresco")\nprint(\'Precio: 2 dólares\')',widgets:['rules'],
+    mission:{text:'Cambia los carteles y deja uno con comillas dobles y otro con comillas simples.',test:c=>!c.res.error&&c.res.outputs.length>=2&&/print\(\s*"/.test(c.code)&&/print\(\s*'/.test(c.code)&&c.code.trim()!==LESSONS[1].code.trim()},
+    quiz:{code:'print(Hola)',q:'¿Qué ocurre al ejecutar esto?',opts:['Aparece un cartel que dice Hola','Python da un error: no conoce la palabra Hola','No pasa nada'],ans:1,why:'Sin comillas, Python busca algo llamado Hola y no lo encuentra. Los textos siempre van entre comillas.'}
+  },
+  {
+    short:'Texto y números',title:'Texto, números y espacios',
+    analogy:'Un cartel de precios mezcla palabras y cifras: «Pan de yuca: 1 USD». Python también deja que juntes varias piezas en un mismo cartel.',
+    body:'El texto va entre comillas. Los números van sin comillas. Si separas las piezas con comas, Python las junta con un espacio. Un print() vacío deja una línea en blanco.',
+    tryIt:'Prueba los ejemplos y luego crea tu propio cartel de precio mezclando texto y un número.',
+    hood:'Cada pieza separada por comas se convierte en texto y se une con un espacio. Los números no llevan comillas, y Python los muestra a su manera: 2.50 aparece como 2.5.',
+    hint:'Un cartel de precio puede ser print("Café:", 1.5, "USD"). Tiene tres piezas: texto, número y texto.',
+    code:'print("Pan de yuca")\nprint(2)\nprint("Precio:", 2, "USD")',widgets:['examples:types'],
+    mission:{text:'Crea un cartel que junte un texto y un número usando una coma.',test:c=>!c.res.error&&c.res.steps.some(s=>s.kind==='print'&&s.args.some(a=>a.type==='str')&&s.args.some(a=>a.type==='num'))&&c.code.trim()!==LESSONS[2].code.trim()},
+    quiz:{code:'print("Pan:", 2)',q:'¿Qué muestra este cartel?',opts:['Pan: 2','Pan:2','"Pan:" 2'],ans:0,why:'La coma une las dos piezas y deja un espacio entre ellas. Las comillas no se muestran.'}
+  },
+  {
+    short:'Errores',title:'El cartel mal colgado',
+    analogy:'Si dejas un cartel a medio colgar, se cae. Si a Python le falta una comilla o un paréntesis, no sabe qué mostrar y te lo dice con un error.',
+    body:'Un error no es un fracaso. Es Python indicándote en qué línea quedó mal colgado el cartel. Lee el mensaje y mira esa línea.',
+    tryIt:'El código de partida tiene un error. Arréglalo y ejecútalo. Después prueba los errores clásicos y el reto del cartel roto.',
+    hood:'Python revisa todo el programa antes de ejecutar nada. Si encuentra un error de escritura (error de sintaxis), no muestra ningún cartel. El problema casi siempre está en la línea indicada o justo antes.',
+    hint:'Falta cerrar algo. Mira el final de la línea: la comilla de cierre va antes del paréntesis.',
+    code:'print("¡Bienvenido a la tienda!)',widgets:['examples:errors','fixit'],
+    mission:{text:'Arregla el cartel mal colgado y ejecútalo sin errores.',test:c=>c.flags.sawError&&!c.res.error&&c.res.outputs.length>=1},
+    quiz:{code:'print("Hola)\nprint("Adiós")',q:'¿Cuántos carteles se muestran?',opts:['Ninguno','Uno','Dos'],ans:0,why:'Python revisa todo el programa antes de empezar. Con un error de sintaxis en cualquier línea, no ejecuta ninguna.'}
+  },
+  {
+    short:'Notas #',title:'Notas en la trastienda',
+    analogy:'En la trastienda dejas notas para ti y tus empleados, como «cambiar el precio el lunes». Los clientes nunca las ven. En Python, esas notas empiezan con #.',
+    body:'Python ignora todo lo que hay después de # en esa línea. Los comentarios sirven para explicar el código a otras personas, y a ti dentro de un mes, y para mantenerlo ordenado.',
+    tryIt:'Pulsa Ejecutar: las notas aparecen en la trastienda y no en los carteles. Añade una nota tuya y luego usa el botón de comparar.',
+    hood:'Cuando Python lee una línea que empieza con #, la descarta antes de ejecutar. Por eso comentar no cambia el resultado. Un comentario también puede ir al final de una línea de código.',
+    hint:'Escribe # seguido de un espacio y tu nota, en una línea nueva. Por ejemplo: # Revisar el stock de pan.',
+    code:'# Cartel de la puerta principal\nprint("¡Bienvenido a la tienda!")\n\n# Oferta del día (cambiar cada mañana)\nprint("Hoy: pan fresco")  # precio: 2 dólares',widgets:['compare'],
+    mission:{text:'Añade una nota propia. Tendrás 4 o más notas y ningún error.',test:c=>!c.res.error&&c.res.notes.length>=4},
+    quiz:{code:'# print("Rebajas")\nprint("Abierto")  # hasta las 8',q:'¿Qué cartel aparece?',opts:['Abierto','Abierto hasta las 8','Rebajas y Abierto'],ans:0,why:'La primera línea es una nota completa y la segunda lleva una nota al final. Python ignora las dos notas.'}
+  },
+  {
+    short:'Apagar',title:'Apagar un cartel con #',
+    analogy:'A veces no quieres tirar un cartel, solo guardarlo un rato. En la tienda lo descuelgas y lo dejas en la trastienda. En Python, le pones # delante.',
+    body:'Comentar una línea de código la apaga sin borrarla. Para encenderla de nuevo, quitas el #. Los programadores lo hacen todo el día.',
+    tryIt:'Usa los interruptores para apagar y encender carteles. También sirve hacer clic en el número de una línea del editor.',
+    hood:'Una línea con # delante se convierte en comentario, así que Python la salta. Quitas el # y vuelve a ser una instrucción que se ejecuta.',
+    hint:'Apaga un cartel con su interruptor. Luego vuelve a encenderlo.',
+    code:'print("Pan fresco: 2 USD")\nprint("Café caliente: 1 USD")\nprint("Jugo de naranja: 1 USD")\nprint("Cerramos a las 8")',widgets:['switches'],
+    mission:{text:'Apaga un cartel con # y vuelve a encenderlo.',test:c=>c.flags.off&&c.flags.on&&!c.res.error},
+    quiz:{code:'print("A")\n# print("B")\nprint("C")',q:'¿Qué carteles se muestran?',opts:['A y C','A, B y C','Solo A'],ans:0,why:'La línea de B tiene # delante, así que está apagada. Python solo ejecuta A y C.'}
+  },
+  {
+    short:'Orden',title:'De arriba hacia abajo',
+    analogy:'Abrir la tienda tiene un orden: primero la puerta, luego las luces, luego los clientes. Python lee tu código igual, una línea tras otra.',
+    body:'Cambia el orden de los bloques y los carteles cambian de orden. Python no adivina lo que quisiste decir. Hace exactamente lo que está escrito, en ese orden.',
+    tryIt:'Pulsa Mezclar y deja los carteles otra vez en el orden correcto. Muévelos con las flechas o arrástralos. También puedes usar el botón Paso a paso.',
+    hood:'Python ejecuta una instrucción, luego la siguiente. No hay saltos ni sorpresas: el orden en que escribes es el orden en que ocurre.',
+    hint:'Fíjate en los números al inicio de cada cartel: 1, 2, 3. Ordénalos de menor a mayor.',
+    code:'print("1. Abrimos la puerta")\nprint("2. Encendemos las luces")\nprint("3. ¡Bienvenidos!")',widgets:['blocks'],
+    mission:{text:'Mezcla los bloques y déjalos en el orden 1, 2, 3.',test:c=>c.flags.shuffled&&!c.res.error&&isOrdered(c.res.outputs)},
+    quiz:{code:'print("Luces")\nprint("Puerta")',q:'¿Cuál se muestra primero?',opts:['Luces','Puerta','Los dos a la vez'],ans:0,why:'Python lee de arriba hacia abajo. La línea de Luces está primero, así que es la primera en ejecutarse.'}
+  },
+  {
+    short:'Tu tienda',title:'Tu primera tienda',
+    analogy:'Es tu turno de abrir. Elige el tipo de tienda, ponle nombre y monta los carteles con lo que ya sabes.',
+    body:'Usa las piezas para insertar carteles ya preparados, o escribe los tuyos. Cuando cumplas los cuatro objetivos podrás abrir tu tienda.',
+    tryIt:'Elige un tipo de tienda, añade piezas y edítalas a tu gusto. Cada cartel lleva una nota # encima.',
+    hood:'Un buen hábito es dejar un comentario corto antes de cada bloque que diga qué hace y por qué. Dentro de un mes lo vas a agradecer.',
+    hint:'Pulsa Bienvenida, Producto y Horario en ese orden. Ya tendrás tres carteles, un precio y una nota por cada cartel.',
+    code:'# Escribe aquí los carteles de tu tienda\n',widgets:['builder'],
+    mission:{text:'Cumple los cuatro objetivos y abre tu tienda.',test:c=>!!P.store.opened&&coreGoalsMet(c.res)},
+    quiz:null
+  }
+];
+const STARTER=LESSONS[7].code.trim();
+
+/* ---------- Estado y guardado ---------- */
+const SAVE_KEY='tienda-python-v2';
+const DEFAULTS={done:[false,false,false,false,false,false,false,false],lesson:0,codes:{},speed:'normal',sound:false,
+  store:{name:'Tienda Don Pepe',type:'Tienda de barrio',skin:'verde',opened:false,itemIdx:0},stats:{clientes:0,arreglados:0}};
+let P=loadSave();
+function clone(o){return JSON.parse(JSON.stringify(o));}
+function loadSave(){
+  try{
+    const r=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
+    if(!r)return clone(DEFAULTS);
+    const d=clone(DEFAULTS);
+    return Object.assign(d,r,{store:Object.assign(d.store,r.store||{}),stats:Object.assign(d.stats,r.stats||{})});
+  }catch(e){return clone(DEFAULTS);}
+}
+function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(P));}catch(e){}}
+
+const S={i:0,errLine:null,activeLine:null,nextLine:null,last:null,step:null,flags:{},quizAns:{},fix:null,exPick:-1,say:0,lastRun:null,wipeArmed:false};
+let timers=[];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const plural=(n,a,b)=>n===1?a:b;
+const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const ta=$('#ta'),hl=$('#hl'),gutter=$('#gutter');
+const L=()=>LESSONS[S.i];
+
+/* ---------- Sonido y avisos ---------- */
+let AC=null;
+function tone(f,d,type,when,vol){
+  if(!P.sound)return;
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    const t=AC.currentTime+(when||0),o=AC.createOscillator(),g=AC.createGain();
+    o.type=type||'sine';o.frequency.value=f;
+    g.gain.setValueAtTime(vol||.05,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d);
+  }catch(e){}
+}
+const sfx={
+  hang:()=>tone(784,.08,'sine'),
+  note:()=>tone(392,.08,'triangle'),
+  err:()=>tone(150,.22,'sawtooth',0,.04),
+  win:()=>[523,659,784,1047].forEach((f,k)=>tone(f,.18,'sine',k*.11))
+};
+let toastT=null;
+function toast(msg){
+  const t=$('#toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+/* ---------- Editor ---------- */
+function renderHL(){
+  const lines=ta.value.split('\n');
+  hl.innerHTML=lines.map((ln,i)=>{
+    const inner=tokenize(ln).map(t=>`<span class="t-${t.t}">${esc(t.s)}</span>`).join('')||'\u200b';
+    const cls=['l'];
+    if(S.errLine===i+1)cls.push('err');
+    if(S.activeLine===i+1)cls.push('active');
+    if(S.nextLine===i+1)cls.push('next');
+    return `<span class="${cls.join(' ')}">${inner}</span>`;
+  }).join('');
+  gutter.innerHTML=lines.map((l,i)=>`<button class="gl" type="button" tabindex="-1" data-line="${i}" title="${l.trim()?'Clic para comentar o descomentar esta línea':''}">${i+1}</button>`).join('');
+  syncScroll();
+}
+function syncScroll(){
+  hl.scrollTop=ta.scrollTop;hl.scrollLeft=ta.scrollLeft;
+  gutter.scrollTop=ta.scrollTop;
+}
+function afterEdit(){
+  S.errLine=null;S.activeLine=null;S.nextLine=null;S.step=null;
+  renderHL();updateStepBtn();liveWidgets();
+}
+function liveWidgets(){
+  const w=L().widgets;
+  if(w.includes('rules'))renderRules();
+  if(w.includes('blocks'))renderBlocks();
+  if(w.includes('switches'))renderSwitches();
+}
+const QUICK=[
+  {o:'print(',c:')'},{o:'"',c:'"'},{o:"'",c:"'"},{o:'(',c:')'},{o:'# ',c:''},{o:', ',c:''}
+];
+function insertQuick(k){
+  const q=QUICK[k];ta.focus();
+  const a=ta.selectionStart,b=ta.selectionEnd,sel=ta.value.slice(a,b);
+  const ins=q.o+sel+q.c;
+  ta.setRangeText(ins,a,b,'end');
+  const pos=sel?a+ins.length:a+q.o.length;
+  ta.setSelectionRange(pos,pos);
+  afterEdit();
+}
+function toggleLines(idxs){
+  const lines=ta.value.split('\n');
+  const targets=idxs.filter(i=>lines[i]!==undefined&&lines[i].trim());
+  if(!targets.length)return;
+  const allOff=targets.every(i=>/^\s*#/.test(lines[i]));
+  targets.forEach(i=>{
+    const isOff=/^\s*#/.test(lines[i]);
+    if(allOff||!isOff)lines[i]=toggleLineText(lines[i]);
+  });
+  if(allOff){if(S.flags.off)S.flags.on=true;}else S.flags.off=true;
+  ta.value=lines.join('\n');
+  afterEdit();run();
+}
+
+/* ---------- Escena de la tienda ---------- */
+function renderShop(){
+  const sc=$('#screen');
+  sc.dataset.skin=P.store.skin;
+  sc.classList.toggle('open',!!P.store.opened);
+  $('#shopName').textContent=P.store.name||'Mi tienda';
+}
+function buildBunting(){
+  $('#bunting').innerHTML=BUNTING.map(c=>`<i style="--c:${c}"></i>`).join('');
+}
+function renderStats(){
+  $('#stSigns').textContent=document.querySelectorAll('#signs .sign:not(.bad)').length;
+  $('#stNotes').textContent=document.querySelectorAll('#notes .note').length;
+  $('#stClients').textContent=P.stats.clientes;
+}
+function setDoor(s){
+  const d=$('#door');d.dataset.s=s;
+  d.textContent=s==='open'?'Abierto':'Cerrado';
+}
+const SAY={
+  happy:['¡Qué buenos carteles!','Voy a entrar a mirar.','Me gusta esta tienda.'],
+  price:['¡Ese precio me gusta!','Llevo uno, por favor.','Qué buen precio.'],
+  bad:['Ese cartel se cayó…','No entiendo el cartel.','Algo está mal colgado.'],
+  empty:['La vitrina está vacía.','Vuelvo más tarde.']
+};
+function customer(mood,kind){
+  const st=$('#street');st.dataset.mood=mood;
+  if(mood==='idle'){$('#bubble').textContent='';return;}
+  const arr=SAY[kind];S.say++;
+  $('#bubble').textContent=arr[S.say%arr.length];
+}
+function confetti(){
+  if(reduceMotion)return;
+  const box=$('#windowBox'),cols=['#F4C542','#E8566F','#4FB3E8','#7BD389','#FFFFFF'];
+  for(let k=0;k<30;k++){
+    const i=document.createElement('i');i.className='conf';
+    i.style.left=(Math.random()*100)+'%';
+    i.style.background=cols[k%cols.length];
+    i.style.setProperty('--x',((Math.random()-.5)*80)+'px');
+    i.style.setProperty('--r',(Math.random()*720-360)+'deg');
+    i.style.animationDelay=(Math.random()*.5)+'s';
+    box.append(i);
+    setTimeout(()=>i.remove(),2800);
+  }
+}
+
+/* ---------- Consola, carteles y traza ---------- */
+function addCons(text,cls){
+  const d=document.createElement('div');d.className=cls;d.textContent=text;$('#cons').append(d);
+  const box=$('#consoleBox');box.scrollTop=box.scrollHeight;
+}
+function addSign(text){
+  const d=document.createElement('div');d.className='sign';d.textContent=text===''?'\u00a0':text;$('#signs').append(d);
+  const box=$('#signs');box.scrollTop=box.scrollHeight;
+}
+function addBadSign(s){
+  const d=document.createElement('div');d.className='sign bad';
+  d.innerHTML=`<strong>Cartel mal colgado</strong><small>línea ${s.n}: ${esc(s.raw.trim())}</small>`;
+  $('#signs').append(d);
+}
+function addNote(text){
+  const d=document.createElement('div');d.className='note';d.textContent=text;$('#notes').append(d);
+}
+function tracebackText(s){
+  const code='    '+s.raw.trim();
+  if(s.phase==='syntax')return `  File "tienda.py", line ${s.n}\n${code}\n${s.type}: ${s.msg}`;
+  return `Traceback (most recent call last):\n  File "tienda.py", line ${s.n}, in <module>\n${code}\nNameError: ${s.msg}`;
+}
+function traceItem(s){
+  const li=document.createElement('li');
+  let chip='',txt='';
+  if(s.kind==='print'){
+    chip='<span class="chip show">Muestra</span>';
+    const k=s.args.length;
+    if(s.text==='')txt='Colgó un cartel vacío. print() sin nada dentro deja una línea en blanco.';
+    else if(k>1)txt=`Juntó ${k} piezas con un espacio entre cada una y colgó «${esc(s.text)}».`;
+    else txt=`Colgó un cartel con el texto «${esc(s.text)}».`;
+    if(s.numChanged)txt+=' Los números van sin comillas, y Python los muestra en su forma más corta.';
+    if(s.trailing)txt+=' La nota al final de la línea la ignoró.';
+  }else if(s.kind==='comment'){
+    chip='<span class="chip ignore">Ignora</span>';
+    txt=/^#\s*print\s*\(/.test(s.text)?'Es un cartel apagado. Python lo salta como a cualquier nota, y puedes volver a encenderlo quitando el #.':'Es una nota de la trastienda. Python la salta y no aparece en ningún cartel.';
+  }else if(s.kind==='noop'){
+    chip='<span class="chip skip">Nada</span>';
+    txt='Nombraste print pero sin paréntesis, así que no le pediste que mostrara nada.';
+  }else if(s.kind==='error'){
+    chip='<span class="chip error">Error</span>';
+    txt=esc(s.friendly);
+  }else{
+    chip='<span class="chip skip">Sin ejecutar</span>';
+    txt=s.why==='syntax'?'Python revisa todo antes de empezar. Como encontró un error, no ejecutó esta línea.':'Python se detuvo antes de llegar aquí.';
+  }
+  li.innerHTML=`<span class="n">${s.n}</span><code class="c">${esc(s.raw.trim())}</code><div class="v">${chip}<span>${txt}</span></div>`;
+  return li;
+}
+
+/* ---------- Ejecución ---------- */
+function applyStep(s){
+  S.activeLine=s.n;
+  if(s.kind==='error')S.errLine=s.n;
+  renderHL();
+  $('#trace').append(traceItem(s));
+  if(s.kind==='print'){addSign(s.text);addCons(s.text,'out');if(s.trailing)addNote(s.trailing);sfx.hang();}
+  else if(s.kind==='comment'){addNote(s.text);sfx.note();}
+  else if(s.kind==='error'){addBadSign(s);addCons(tracebackText(s),'err');sfx.err();}
+  renderStats();
+}
+function resetOutput(){
+  $('#signs').innerHTML='';$('#notes').innerHTML='';$('#cons').innerHTML='';$('#trace').innerHTML='';
+  $('#summary').hidden=true;
+  customer('idle');
+  renderStats();
+}
+function finish(res,opts){
+  S.activeLine=null;S.nextLine=null;renderHL();
+  const el=$('#summary'),lines=res.steps.length,prints=res.outputs.length,notes=res.notes.length;
+  el.hidden=false;el.classList.toggle('bad',!!res.error);
+  if(!lines){el.textContent='No hay nada que ejecutar. Escribe un print("...") o una nota con #.';}
+  else if(res.error&&res.error.phase==='syntax'){
+    el.textContent=`Python revisó todo el programa antes de empezar y encontró un error en la línea ${res.error.n}. Por eso no mostró ningún cartel.`;
+  }else if(res.error){
+    el.textContent=`Python mostró ${prints} ${plural(prints,'cartel','carteles')} y se detuvo en la línea ${res.error.n}.`;
+  }else{
+    el.textContent=`Python leyó ${lines} ${plural(lines,'línea','líneas')} de arriba hacia abajo. Mostró ${prints} ${plural(prints,'cartel','carteles')} e ignoró ${notes} ${plural(notes,'nota','notas')}.`;
+  }
+  if(res.error)S.flags.sawError=true;
+  setDoor(!res.error&&prints>0?'open':'closed');
+  if(res.error)customer('bad','bad');
+  else if(!prints)customer('bad','empty');
+  else customer('happy',res.outputs.some(o=>/\d/.test(o.text))?'price':'happy');
+  if(!opts.auto){
+    if(!res.error&&prints>0){P.stats.clientes+=prints;save();}
+    renderStats();
+    afterRunChecks(res);
+  }
+  renderStats();
+  liveGoals();
+}
+function run(opts){
+  opts=opts||{};
+  timers.forEach(clearTimeout);timers=[];
+  S.step=null;S.nextLine=null;updateStepBtn();
+  const res=analyze(ta.value);
+  S.last=res;S.errLine=null;S.activeLine=null;
+  resetOutput();renderHL();
+  addCons('$ python tienda.py','cmd');
+  const syntaxFail=res.error&&res.error.phase==='syntax';
+  const delay=(reduceMotion||opts.auto||syntaxFail)?0:SPEEDS[P.speed];
+  res.steps.forEach((s,k)=>timers.push(setTimeout(()=>applyStep(s),k*delay)));
+  timers.push(setTimeout(()=>finish(res,opts),res.steps.length*delay));
+}
+function startStep(){
+  timers.forEach(clearTimeout);timers=[];
+  const res=analyze(ta.value);
+  if((res.error&&res.error.phase==='syntax')||!res.steps.length){run();return;}
+  S.last=res;S.errLine=null;S.activeLine=null;
+  resetOutput();addCons('$ python tienda.py','cmd');
+  S.step={res,i:0};S.nextLine=res.steps[0].n;
+  renderHL();updateStepBtn();
+}
+function nextStep(){
+  const st=S.step;if(!st)return;
+  const s=st.res.steps[st.i];
+  applyStep(s);st.i++;
+  if(s.kind==='error'){
+    while(st.i<st.res.steps.length){applyStep(st.res.steps[st.i]);st.i++;}
+  }
+  if(st.i>=st.res.steps.length){
+    S.step=null;finish(st.res,{});
+  }else{
+    S.nextLine=st.res.steps[st.i].n;renderHL();
+  }
+  updateStepBtn();
+}
+function updateStepBtn(){
+  const b=$('#stepBtn');
+  if(S.step){
+    b.textContent=`Siguiente línea (${S.step.i+1} de ${S.step.res.steps.length})`;
+    b.classList.add('primary');
+  }else{
+    b.textContent='Paso a paso';b.classList.remove('primary');
+  }
+}
+
+/* ---------- Misiones ---------- */
+function afterRunChecks(res){
+  const f=S.fix;
+  if(f&&!res.error&&JSON.stringify(res.outputs.map(o=>o.text))===JSON.stringify(f.exp)){
+    f.done=true;P.stats.arreglados++;save();toast('¡Cartel arreglado!');sfx.win();renderFix();
+  }else if(f)renderFix();
+  if(L().mission&&!P.done[S.i]){
+    const ok=L().mission.test({res,code:ta.value,flags:S.flags});
+    if(ok)completeMission();
+  }
+  if(L().widgets.includes('blocks'))renderOrderMsg();
+}
+function completeMission(){
+  if(P.done[S.i])return;
+  P.done[S.i]=true;save();
+  renderStepper();renderProgress();renderMission();
+  toast('Misión cumplida: '+L().title);sfx.win();
+}
+function renderProgress(){
+  const n=P.done.filter(Boolean).length;
+  $('#progText').textContent=`Misiones ${n} de ${LESSONS.length}`;
+  $('#progBar').style.width=(n/LESSONS.length*100)+'%';
+}
+function renderMission(){
+  const m=$('#mission');if(!m)return;
+  const done=!!P.done[S.i];
+  m.dataset.done=String(done);
+  m.innerHTML=`<span class="box" aria-hidden="true">✓</span><span><b>Misión${done?' cumplida':''}</b>${esc(L().mission.text)}</span>`;
+}
+
+/* ---------- Lección: tarjeta y widgets ---------- */
+function renderStepper(){
+  $('#stepper').innerHTML=LESSONS.map((x,i)=>`<button class="step${P.done[i]?' done':''}" type="button" data-go="${i}" aria-label="Lección ${i+1}: ${esc(x.title)}${P.done[i]?' (misión cumplida)':''}" ${i===S.i?'aria-current="step"':''}><span class="tick" aria-hidden="true">✓</span><span class="num">${i+1}</span><span class="lbl">${esc(x.short)}</span></button>`).join('');
+}
+function renderLesson(){
+  const x=L(),last=LESSONS.length-1;
+  $('#lesson').innerHTML=`
+    <p class="eyebrow">Lección ${S.i+1} de ${LESSONS.length}</p>
+    <h2>${esc(x.title)}</h2>
+    <div class="lesson-body">
+      <div class="shop-says"><span class="pill">En la tienda</span><p>${esc(x.analogy)}</p></div>
+      <p>${esc(x.body)}</p>
+      <div class="try"><b>Pruébalo</b>${esc(x.tryIt)}</div>
+      <div class="mission" id="mission"></div>
+    </div>
+    <div class="widget" id="widget"></div>
+    <details class="hint"><summary>¿Atascado? Ver una pista</summary><p>${esc(x.hint)}</p></details>
+    <div class="quiz" id="quiz"></div>
+    <div class="lesson-nav">
+      <button class="btn" type="button" data-go="${S.i-1}" ${S.i===0?'disabled':''}>← Anterior</button>
+      <button class="btn primary" type="button" data-go="${S.i+1}" ${S.i===last?'disabled':''}>Siguiente →</button>
+    </div>`;
+  $('#hoodNote').textContent=x.hood;
+  renderMission();renderWidgets();renderQuiz();
+}
+function renderWidgets(){
+  const host=$('#widget');
+  host.innerHTML=L().widgets.map(w=>{
+    if(w==='rules')return '<div class="rules" id="rules"></div>';
+    if(w.startsWith('examples')){
+      const list=w.endsWith('types')?EX_TYPES:EX_ERRORS;
+      return `<div class="chips" role="group" aria-label="Ejemplos para probar">${list.map((e,i)=>`<button class="btn small" type="button" data-ex="${i}" aria-pressed="${S.exPick===i}">${esc(e.k)}</button>`).join('')}</div>`;
+    }
+    if(w==='fixit')return '<div class="fix" id="fix"></div>';
+    if(w==='compare')return '<div><button class="btn" type="button" id="cmpBtn">Quitar todas las notas y comparar</button></div><div id="cmpOut" aria-live="polite"></div>';
+    if(w==='switches')return '<ul class="switches" id="switches" aria-label="Interruptores de carteles"></ul>';
+    if(w==='blocks')return '<div class="blocks-head"><button class="btn" type="button" data-shuffle>Mezclar</button><span class="order-msg" id="orderMsg" aria-live="polite"></span></div><ol class="blocks" id="blocks" aria-label="Bloques de código"></ol>';
+    if(w==='builder')return builderHTML();
+    return '';
+  }).join('');
+  renderRules();renderFix();renderBlocks();renderSwitches();
+  if(L().widgets.includes('builder'))liveGoals();
+}
+
+/* Reglas */
+function ruleStates(){
+  const items=analyze(ta.value).items.filter(x=>/^\s*print/i.test(x.raw));
+  if(!items.length)return{r1:'none',r2:'none',r3:'none'};
+  const h=items.filter(x=>x.kind==='error').map(x=>x.hint);
+  return{
+    r1:h.includes('case')?'fail':'ok',
+    r2:(h.includes('paren-open')||h.includes('paren-close'))?'fail':'ok',
+    r3:(h.includes('quote')||h.includes('noquotes')||h.includes('curly'))?'fail':'ok'
+  };
+}
+function renderRules(){
+  const host=$('#rules');if(!host)return;
+  const st=ruleStates(),label={ok:'Cumple',fail:'No cumple',none:'Sin print'};
+  const defs=[['r1','print en minúsculas','Todo en minúsculas: print.'],['r2','Paréntesis ( )','El mensaje va dentro de ( y ).'],['r3','Comillas " " o \' \'','Comillas rectas del mismo tipo al abrir y al cerrar.']];
+  host.innerHTML=defs.map(([k,t,d],i)=>`<div class="rule" data-s="${st[k]}"><span class="r-s">Regla ${i+1} · ${label[st[k]]}</span><span class="r-t">${esc(t)}</span><span class="r-d">${esc(d)}</span></div>`).join('');
+}
+
+/* Reto del cartel roto */
+function newFix(){
+  const pool=FIXES.map((f,i)=>i).filter(i=>!S.fix||i!==S.fix.idx);
+  const idx=pool[Math.floor(Math.random()*pool.length)];
+  S.fix={idx,exp:FIXES[idx].exp,done:false};
+  ta.value=FIXES[idx].c;afterEdit();run();renderFix();
+}
+function renderFix(){
+  const host=$('#fix');if(!host)return;
+  let msg='Pulsa el botón y arregla el programa roto que aparece en el editor.',s='';
+  if(S.fix){
+    const goal=S.fix.exp.map(e=>`«${esc(e)}»`).join(' y ');
+    if(S.fix.done){msg=`¡Arreglado! Mostró ${goal}.`;s='ok';}
+    else msg=`Objetivo: que los carteles muestren ${goal}. Arréglalo y pulsa Ejecutar.`;
+  }
+  host.innerHTML=`<b>Reto del cartel roto · ${P.stats.arreglados} ${plural(P.stats.arreglados,'arreglado','arreglados')}</b><p class="fmsg" data-s="${s}">${msg}</p><button class="btn small" type="button" data-fix>${S.fix&&S.fix.done?'Otro cartel roto':'Dame un cartel roto'}</button>`;
+}
+
+/* Comparar */
+function renderCompare(){
+  const out=$('#cmpOut');if(!out)return;
+  const a=analyze(ta.value),stripped=stripComments(ta.value),b=analyze(stripped);
+  const ok=!a.error&&!b.error;
+  const same=ok&&JSON.stringify(a.outputs.map(o=>o.text))===JSON.stringify(b.outputs.map(o=>o.text));
+  const list=r=>r.outputs.length?`<ul>${r.outputs.map(o=>`<li>${esc(o.text)||'(vacío)'}</li>`).join('')}</ul>`:'<p>Ningún cartel.</p>';
+  out.innerHTML=`<div class="cmp"><div class="cmp-col"><h3>Con ${a.notes.length} ${plural(a.notes.length,'nota','notas')}</h3>${list(a)}</div><div class="cmp-col"><h3>Sin notas</h3><pre>${esc(stripped)||'(sin código)'}</pre>${list(b)}</div></div>`+
+    (same?`<p class="verdict">Mismo resultado: ${a.outputs.length} ${plural(a.outputs.length,'cartel','carteles')} en los dos casos. Las notas no cambian lo que hace el programa.</p>`:
+    `<p class="verdict bad">${ok?'Los resultados no coinciden.':'Corrige primero los errores del código y vuelve a comparar.'}</p>`);
+}
+
+/* Interruptores */
+function renderSwitches(){
+  const host=$('#switches');if(!host)return;
+  const items=[];
+  ta.value.split('\n').forEach((l,i)=>{
+    if(/^\s*print\b/.test(l)||/^\s*#\s*print\s*\(/.test(l))items.push({i,on:!/^\s*#/.test(l),text:l.replace(/^\s*#\s*/,'').trim()});
+  });
+  host.innerHTML=items.length?items.map(it=>`<li data-on="${it.on}"><span class="sw-code">${esc(it.text)}</span><span class="sw-state">${it.on?'Encendido':'Apagado'}</span><button class="sw" type="button" role="switch" aria-checked="${it.on}" aria-label="Cartel ${esc(it.text)}" data-sw="${it.i}"></button></li>`).join(''):'<li><span class="sw-code">No hay carteles en el editor.</span></li>';
+}
+
+/* Bloques */
+function codeLines(){return ta.value.split('\n').filter(l=>l.trim());}
+function renderBlocks(){
+  const host=$('#blocks');if(!host)return;
+  const lines=codeLines();
+  host.innerHTML=lines.map((l,i)=>`<li class="block" draggable="true" data-i="${i}"><span class="ord" title="Orden de ejecución">${i+1}</span><span class="src">${esc(l)}</span><span class="mv"><button type="button" data-mv="-1" data-i="${i}" aria-label="Subir bloque ${i+1}" ${i===0?'disabled':''}>▲</button><button type="button" data-mv="1" data-i="${i}" aria-label="Bajar bloque ${i+1}" ${i===lines.length-1?'disabled':''}>▼</button></span></li>`).join('');
+  renderOrderMsg();
+}
+function renderOrderMsg(){
+  const m=$('#orderMsg');if(!m)return;
+  const ord=isOrdered(analyze(ta.value).outputs);
+  m.dataset.ok=String(ord);
+  m.textContent=ord?'Orden correcto: 1, 2, 3':'Los carteles están desordenados';
+}
+function moveBlock(from,to){
+  const lines=codeLines();
+  if(to<0||to>=lines.length||from===to)return;
+  const x=lines.splice(from,1)[0];lines.splice(to,0,x);
+  ta.value=lines.join('\n');
+  afterEdit();run();
+}
+function shuffleBlocks(){
+  const lines=codeLines();
+  let tries=0,out=lines.slice();
+  do{
+    out=lines.slice();
+    for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]];}
+    tries++;
+  }while(tries<20&&out.join('\n')===lines.join('\n')||isOrdered(analyze(out.join('\n')).outputs)&&tries<20);
+  S.flags.shuffled=true;
+  ta.value=out.join('\n');afterEdit();run();
+}
+
+/* Quiz */
+function renderQuiz(){
+  const host=$('#quiz'),q=L().quiz;
+  if(!q){host.hidden=true;host.innerHTML='';return;}
+  host.hidden=false;
+  const ans=S.quizAns[S.i];
+  const keys=['A','B','C'];
+  let res='';
+  if(ans!==undefined){
+    const d=describeResult(q.code),right=ans===q.ans;
+    res=`<div class="qres" aria-live="polite"><p><b>${right?'¡Correcto!':'Casi.'}</b> ${esc(q.why)}</p><div class="real">${d.outs.length?esc(d.outs.map(o=>o||'(línea en blanco)').join('\n')):'(ningún cartel)'}${d.err?'\n\n'+esc(d.err):''}</div></div>`;
+  }
+  host.innerHTML=`<h3>Antes de ejecutar, adivina</h3><pre class="qcode">${esc(q.code)}</pre><p>${esc(q.q)}</p>
+    <div class="opts">${q.opts.map((o,i)=>`<button class="opt${ans!==undefined?(i===q.ans?' right':(i===ans?' wrong':'')):''}" type="button" data-quiz="${i}" ${ans!==undefined?'disabled':''}><span class="k">${keys[i]}</span><span>${esc(o)}</span></button>`).join('')}</div>${res}`;
+}
+
+/* ---------- Constructor de tienda ---------- */
+function typeInfo(){return STORE_TYPES.find(t=>t.k===P.store.type)||STORE_TYPES[0];}
+function cleanName(){return (P.store.name||'mi tienda').replace(/["'\\]/g,'').trim()||'mi tienda';}
+function builderHTML(){
+  return `<div class="builder">
+    <div class="field"><label for="storeName">Nombre de tu tienda</label><input id="storeName" type="text" maxlength="26" value="${esc(P.store.name)}" autocomplete="off"></div>
+    <div class="field"><span class="lb">Tipo de tienda</span><div class="chips" role="group" aria-label="Tipo de tienda">${STORE_TYPES.map(t=>`<button class="btn small" type="button" data-type="${esc(t.k)}" aria-pressed="${P.store.type===t.k}">${esc(t.k)}</button>`).join('')}</div></div>
+    <div class="field"><span class="lb">Color del toldo</span><div class="skins" role="group" aria-label="Color del toldo">${SKINS.map(([k,c])=>`<button class="swatch" type="button" style="--c:${c}" data-skin="${k}" aria-label="Toldo ${k}" aria-pressed="${P.store.skin===k}"></button>`).join('')}</div></div>
+    <div class="field"><span class="lb">Piezas listas para insertar</span><div class="chips" role="group" aria-label="Piezas">
+      <button class="btn small" type="button" data-piece="welcome">+ Bienvenida</button>
+      <button class="btn small" type="button" data-piece="product">+ Producto y precio</button>
+      <button class="btn small" type="button" data-piece="hours">+ Horario</button>
+      <button class="btn small" type="button" data-piece="offer">+ Oferta del día</button>
+      <button class="btn small" type="button" data-piece="blank">+ Línea en blanco</button>
+      <button class="btn small" type="button" data-piece="off">+ Cartel apagado</button></div></div>
+    <div class="field"><span class="lb">Objetivos para abrir</span><ul class="goals" id="goals"></ul></div>
+    <div class="meter"><span class="t" id="goalText">0 de 4</span><div class="bar" aria-hidden="true"><i id="goalBar"></i></div></div>
+    <div class="finale" id="finale" aria-live="polite"></div>
+  </div>`;
+}
+function goalList(res){
+  const ran=!!res&&res.steps.length>0;
+  const prints=ran?res.steps.filter(s=>s.kind==='print'):[];
+  const core=[
+    {t:'Al menos 3 carteles',ok:ran&&!res.error&&res.outputs.length>=3},
+    {t:'Un producto con su precio: texto y número juntos, separados por coma',ok:ran&&!res.error&&prints.some(p=>p.args.some(a=>a.type==='str')&&p.args.some(a=>a.type==='num'))},
+    {t:'Una nota # por cada cartel',ok:ran&&!res.error&&res.outputs.length>0&&res.notes.length>=res.outputs.length},
+    {t:'Sin errores',ok:ran&&!res.error}
+  ];
+  const bonus=[
+    {t:'Un cartel apagado con #',ok:/^\s*#\s*print\s*\(/m.test(ta.value)},
+    {t:'Una línea en blanco con print()',ok:ran&&!res.error&&res.outputs.some(o=>o.text==='')}
+  ];
+  return{core,bonus};
+}
+function coreGoalsMet(res){return goalList(res).core.every(g=>g.ok);}
+function liveGoals(){
+  const host=$('#goals');if(!host)return;
+  const g=goalList(S.last),n=g.core.filter(x=>x.ok).length;
+  host.innerHTML=g.core.map(x=>`<li class="goal" data-ok="${x.ok}"><span class="box" aria-hidden="true">✓</span><span>${esc(x.t)}${x.ok?'<span class="sr-only"> (cumplido)</span>':''}</span></li>`).join('')+
+    g.bonus.map(x=>`<li class="goal bonus" data-ok="${x.ok}"><span class="box" aria-hidden="true">✓</span><span>${esc(x.t)}<span class="extra">Extra</span></span></li>`).join('');
+  $('#goalText').textContent=`${n} de 4`;
+  $('#goalBar').style.width=(n/4*100)+'%';
+  renderFinale(n===4);
+}
+function renderFinale(met){
+  const f=$('#finale');if(!f)return;
+  if(!met&&!P.store.opened){f.innerHTML='';return;}
+  if(!P.store.opened){
+    f.innerHTML='<p class="win">¡Cumpliste los cuatro objetivos! Tu tienda está lista para abrir.</p><div><button class="btn primary" type="button" data-open>Abrir mi tienda</button></div>';
+    return;
+  }
+  const date=new Date().toLocaleDateString('es',{day:'numeric',month:'long',year:'numeric'});
+  const signs=S.last?S.last.outputs.length:0,notes=S.last?S.last.notes.length:0;
+  const done=P.done.filter(Boolean).length;
+  f.innerHTML=`<div class="cert"><p class="eyebrow">Licencia de tienda</p><h3>${esc(P.store.name)}</h3>
+    <p>Abierta el ${esc(date)}. Dueño: aprendiz de Python.</p>
+    <dl><div><dt>Carteles</dt><dd>${signs}</dd></div><div><dt>Notas</dt><dd>${notes}</dd></div><div><dt>Misiones</dt><dd>${done} de ${LESSONS.length}</dd></div></dl>
+    <p>Hoy aprendiste dos herramientas: print() para mostrar y # para anotar.</p></div>
+    <div class="chips"><button class="btn" type="button" data-copy>Copiar el código de mi tienda</button><button class="btn" type="button" data-close>Cerrar y montar otra tienda</button></div>
+    <textarea class="copybox" id="copyBox" readonly hidden aria-label="Código de tu tienda"></textarea>`;
+}
+function openShop(){
+  P.store.opened=true;save();
+  renderShop();confetti();sfx.win();
+  toast(`¡${P.store.name} está abierta!`);
+  completeMission();
+  renderFinale(true);
+}
+function addPiece(kind){
+  const info=typeInfo(),nm=cleanName();
+  let piece='';
+  if(kind==='welcome')piece=`# Cartel de bienvenida\nprint("¡Bienvenidos a ${nm}!")`;
+  if(kind==='product'){
+    const it=info.items[P.store.itemIdx%info.items.length];P.store.itemIdx++;save();
+    piece=`# Producto y su precio\nprint("${it[0]}:", ${it[1]}, "USD")`;
+  }
+  if(kind==='hours')piece='# Horario de atención\nprint("Abrimos de 8 a 18")';
+  if(kind==='offer')piece='# Oferta del día\nprint("Oferta del día: 2 por 1")';
+  if(kind==='blank')piece='# Línea en blanco para separar\nprint()';
+  if(kind==='off')piece='# Cartel guardado para otro día\n# print("Cerrado por inventario")';
+  let cur=ta.value.replace(/\s+$/,'');
+  if(cur===STARTER)cur='';
+  ta.value=(cur?cur+'\n\n':'')+piece+'\n';
+  afterEdit();run();
+  ta.scrollTop=ta.scrollHeight;syncScroll();
+}
+function copyCode(){
+  const text=ta.value;
+  const fallback=()=>{
+    const box=$('#copyBox');
+    if(box){box.hidden=false;box.value=text;box.focus();box.select();}
+    else{ta.focus();ta.select();}
+    toast('Selecciona el código y cópialo con Ctrl + C');
+  };
+  try{
+    navigator.clipboard.writeText(text).then(()=>toast('Código copiado'),fallback);
+  }catch(e){fallback();}
+}
+
+/* ---------- Cambio de lección ---------- */
+function go(i,reset){
+  if(i<0||i>=LESSONS.length)return;
+  timers.forEach(clearTimeout);timers=[];
+  if(S.ready&&!reset)P.codes[S.i]=ta.value;
+  else if(reset)delete P.codes[i];
+  S.ready=true;
+  S.i=i;P.lesson=i;S.flags={};S.fix=null;S.step=null;S.nextLine=null;S.exPick=-1;S.last=null;
+  ta.value=P.codes[i]!==undefined?P.codes[i]:LESSONS[i].code;
+  ta.scrollTop=0;ta.scrollLeft=0;
+  save();
+  renderStepper();renderProgress();renderLesson();renderHL();updateStepBtn();
+  run({auto:true});
+}
+
+/* ---------- Ajustes ---------- */
+function renderSettings(){
+  document.querySelectorAll('[data-speed]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.speed===P.speed)));
+  const sb=$('#soundBtn');sb.setAttribute('aria-pressed',String(P.sound));sb.textContent=P.sound?'Activados':'Desactivados';
+}
+
+/* ---------- Eventos ---------- */
+ta.addEventListener('input',afterEdit);
+ta.addEventListener('scroll',syncScroll);
+ta.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();run();return;}
+  if((e.ctrlKey||e.metaKey)&&e.key==='/'){
+    e.preventDefault();
+    const v=ta.value,a=ta.selectionStart;let b=ta.selectionEnd;
+    if(b>a&&v[b-1]==='\n')b--;
+    const first=v.slice(0,a).split('\n').length-1,lastL=v.slice(0,b).split('\n').length-1;
+    const idx=[];for(let k=first;k<=lastL;k++)idx.push(k);
+    toggleLines(idx);
+  }
+});
+$('#runBtn').addEventListener('click',()=>run());
+$('#stepBtn').addEventListener('click',()=>{if(S.step)nextStep();else startStep();});
+$('#resetBtn').addEventListener('click',()=>go(S.i,true));
+$('#copyBtn').addEventListener('click',copyCode);
+$('#quick').addEventListener('mousedown',e=>e.preventDefault());
+$('#quick').addEventListener('click',e=>{const b=e.target.closest('[data-q]');if(b)insertQuick(Number(b.dataset.q));});
+$('#bigBtn').addEventListener('click',e=>{
+  const on=document.body.classList.toggle('big');
+  e.currentTarget.setAttribute('aria-pressed',String(on));
+  renderHL();
+});
+$('#soundBtn').addEventListener('click',()=>{P.sound=!P.sound;save();renderSettings();if(P.sound)tone(660,.12,'sine');});
+$('#wipeBtn').addEventListener('click',e=>{
+  const b=e.currentTarget;
+  if(!S.wipeArmed){S.wipeArmed=true;b.textContent='¿Seguro? Pulsa otra vez';setTimeout(()=>{S.wipeArmed=false;b.textContent='Borrar progreso';},4000);return;}
+  S.wipeArmed=false;b.textContent='Borrar progreso';
+  P=clone(DEFAULTS);S.quizAns={};save();renderSettings();renderShop();go(0,true);toast('Progreso borrado');
+});
+
+document.addEventListener('click',e=>{
+  const t=e.target;
+  const g=t.closest('[data-go]');
+  if(g&&!g.disabled){go(Number(g.dataset.go));return;}
+  const gl=t.closest('.gl');
+  if(gl){toggleLines([Number(gl.dataset.line)]);return;}
+  const sp=t.closest('[data-speed]');
+  if(sp){P.speed=sp.dataset.speed;save();renderSettings();return;}
+  const ex=t.closest('[data-ex]');
+  if(ex){
+    const list=L().widgets.includes('examples:types')?EX_TYPES:EX_ERRORS;
+    S.exPick=Number(ex.dataset.ex);ta.value=list[S.exPick].c;
+    document.querySelectorAll('[data-ex]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.ex)===S.exPick)));
+    afterEdit();run();return;
+  }
+  if(t.closest('[data-fix]')){newFix();return;}
+  if(t.closest('#cmpBtn')){renderCompare();return;}
+  const sw=t.closest('[data-sw]');
+  if(sw){toggleLines([Number(sw.dataset.sw)]);return;}
+  const mv=t.closest('[data-mv]');
+  if(mv&&!mv.disabled){const i=Number(mv.dataset.i);moveBlock(i,i+Number(mv.dataset.mv));return;}
+  if(t.closest('[data-shuffle]')){shuffleBlocks();return;}
+  const qz=t.closest('[data-quiz]');
+  if(qz){S.quizAns[S.i]=Number(qz.dataset.quiz);renderQuiz();(S.quizAns[S.i]===L().quiz.ans)?sfx.win():sfx.err();return;}
+  const ty=t.closest('[data-type]');
+  if(ty){
+    const info=STORE_TYPES.find(x=>x.k===ty.dataset.type);
+    P.store.type=info.k;P.store.name=info.name;P.store.skin=info.skin;P.store.itemIdx=0;save();
+    renderShop();$('#storeName').value=P.store.name;
+    document.querySelectorAll('[data-type]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.type===info.k)));
+    document.querySelectorAll('.swatch').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.skin===info.skin)));
+    renderFinale(goalList(S.last).core.every(x=>x.ok));return;
+  }
+  const sk=t.closest('.swatch');
+  if(sk){
+    P.store.skin=sk.dataset.skin;save();renderShop();
+    document.querySelectorAll('.swatch').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.skin===P.store.skin)));return;
+  }
+  const pc=t.closest('[data-piece]');
+  if(pc){addPiece(pc.dataset.piece);return;}
+  if(t.closest('[data-open]')){openShop();return;}
+  if(t.closest('[data-copy]')){copyCode();return;}
+  if(t.closest('[data-close]')){P.store.opened=false;save();renderShop();renderFinale(coreGoalsMet(S.last));toast('Tienda cerrada. Puedes montar otra.');return;}
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='storeName'){
+    P.store.name=e.target.value;save();renderShop();
+  }
+});
+
+let dragFrom=null;
+document.addEventListener('dragstart',e=>{
+  const b=e.target.closest&&e.target.closest('.block');if(!b)return;
+  dragFrom=Number(b.dataset.i);e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',String(dragFrom));
+});
+document.addEventListener('dragover',e=>{
+  const b=e.target.closest&&e.target.closest('.block');if(!b||dragFrom===null)return;
+  e.preventDefault();
+  document.querySelectorAll('.block.over').forEach(x=>x.classList.remove('over'));b.classList.add('over');
+});
+document.addEventListener('drop',e=>{
+  const b=e.target.closest&&e.target.closest('.block');if(!b||dragFrom===null)return;
+  e.preventDefault();const to=Number(b.dataset.i),from=dragFrom;dragFrom=null;moveBlock(from,to);
+});
+document.addEventListener('dragend',()=>{dragFrom=null;document.querySelectorAll('.block.over').forEach(x=>x.classList.remove('over'));});
+
+/* ---------- Inicio ---------- */
+buildBunting();
+renderShop();
+renderSettings();
+go(Math.min(Math.max(Number(P.lesson)||0,0),LESSONS.length-1));
+</script>
+
+</body></html>
